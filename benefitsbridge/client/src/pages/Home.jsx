@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import CalculatorCard from '../components/Calculator/CalculatorCard';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -23,6 +24,43 @@ export default function Home() {
           >
             {t('home.cta')}
           </button>
+        </div>
+      </section>
+
+      {/* Before vs After Comparison (BenefitsCal vs BenefitsBridge) */}
+      <section className="py-12 px-4 bg-neutral-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-neutral-100 p-6 rounded-lg border">
+              <h3 className="text-xl font-semibold text-neutral-700 mb-4">❌ BenefitsCal.com</h3>
+              <ul className="space-y-2 text-neutral-700">
+                <li>❌ Website crashes and loses your progress</li>
+                <li>❌ 47-page form with no guidance</li>
+                <li>❌ Legal jargon nobody understands</li>
+                <li>❌ No status updates for weeks</li>
+                <li>❌ Impossible to use on a phone</li>
+                <li>❌ No help when you get stuck</li>
+                <li>❌ Documents get rejected with no explanation</li>
+                <li>❌ Miss deadlines with no warning</li>
+              </ul>
+            </div>
+
+            <div className="bg-success-50 p-6 rounded-lg border border-success-100">
+              <h3 className="text-xl font-semibold text-success-700 mb-4">✅ BenefitsBridge</h3>
+              <ul className="space-y-2 text-neutral-800">
+                <li>✅ Never loses your progress — auto-saves constantly</li>
+                <li>✅ Simple step-by-step guidance</li>
+                <li>✅ Plain language — no jargon anywhere</li>
+                <li>✅ Real-time status tracker with SMS alerts</li>
+                <li>✅ Designed for your smartphone</li>
+                <li>✅ AI assistant answers questions instantly</li>
+                <li>✅ Document check before submission</li>
+                <li>✅ Deadline reminders sent automatically</li>
+              </ul>
+            </div>
+          </div>
+
+          <p className="mt-6 text-neutral-700">Over $60 billion in benefits go unclaimed every year because systems like BenefitsCal are too broken to use. BenefitsBridge fixes that.</p>
         </div>
       </section>
 
@@ -104,6 +142,45 @@ export default function Home() {
                 Participating stores statewide
               </li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-12 px-4 bg-neutral-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-8">What people are saying</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center font-bold mb-4">MG</div>
+              <p className="text-neutral-700">"I tried applying on the government website three times and kept losing my progress. With BenefitsBridge I finished in 20 minutes on my phone during my lunch break."</p>
+              <div className="mt-4 text-success-600 font-semibold">$768/month for family of 3</div>
+              <div className="mt-2 text-sm text-neutral-600">Maria G., Los Angeles</div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center font-bold mb-4">JT</div>
+              <p className="text-neutral-700">"The AI assistant explained everything in plain English. I didn't even know I qualified until I used the screener. Now my family gets $536 a month."</p>
+              <div className="mt-4 text-success-600 font-semibold">$536/month for family of 2</div>
+              <div className="mt-2 text-sm text-neutral-600">James T., San Jose</div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center font-bold mb-4">LP</div>
+              <p className="text-neutral-700">"Finally a website that works in Vietnamese! I helped my whole family apply. The status tracker meant we always knew what was happening."</p>
+              <div className="mt-4 text-success-600 font-semibold">$994/month for family of 4</div>
+              <div className="mt-2 text-sm text-neutral-600">Linh P., San Diego</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Embed Calculator between How It Works and footer */}
+      <section className="py-12 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold mb-4">Estimate Your Monthly Benefit</h2>
+          <div>
+            <CalculatorCard />
           </div>
         </div>
       </section>

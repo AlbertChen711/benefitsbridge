@@ -6,6 +6,8 @@ import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import AIAssistant from './components/common/AIAssistant';
+import DeadlineBanner from './components/common/DeadlineBanner';
+import MobileTabBar from './components/common/MobileTabBar';
 import Home from './pages/Home';
 import Screener from './pages/Screener';
 import Signup from './pages/Signup';
@@ -14,6 +16,8 @@ import Apply from './pages/Apply';
 import Confirmation from './pages/Confirmation';
 import Status from './pages/Status';
 import Help from './pages/Help';
+import Calculator from './pages/Calculator';
+import Faq from './pages/Faq';
 import './index.css';
 
 function App() {
@@ -23,7 +27,10 @@ function App() {
         <ApplicationProvider>
           <LanguageProvider>
             <div className="flex flex-col min-h-screen bg-white">
-              <Navbar />
+              <DeadlineBanner />
+              <div className="pt-10"> {/* space for fixed banner */}
+                <Navbar />
+              </div>
               
               <main className="flex-1">
                 <Routes>
@@ -32,6 +39,8 @@ function App() {
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/documents" element={<Documents />} />
                   <Route path="/apply" element={<Apply />} />
+                  <Route path="/calculator" element={<Calculator />} />
+                  <Route path="/faq" element={<Faq />} />
                   <Route path="/confirmation" element={<Confirmation />} />
                   <Route path="/status" element={<Status />} />
                   <Route path="/help" element={<Help />} />
@@ -39,6 +48,7 @@ function App() {
               </main>
 
               <Footer />
+              <MobileTabBar />
               <AIAssistant />
             </div>
           </LanguageProvider>

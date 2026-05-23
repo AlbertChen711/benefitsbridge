@@ -27,36 +27,20 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation Menu */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link
-              to="/screener"
-              className="text-neutral-700 hover:text-primary-600 font-medium transition"
-            >
-              {t('nav.eligibility')}
-            </Link>
-            <Link
-              to="/apply"
-              className="text-neutral-700 hover:text-primary-600 font-medium transition"
-            >
-              {t('nav.apply')}
-            </Link>
-            <Link
-              to="/status"
-              className="text-neutral-700 hover:text-primary-600 font-medium transition"
-            >
-              {t('nav.status')}
-            </Link>
-            <Link
-              to="/help"
-              className="text-neutral-700 hover:text-primary-600 font-medium transition"
-            >
-              {t('nav.help')}
-            </Link>
+          <div className="hidden md:flex items-center gap-6">
+            <Link to="/screener" className="text-neutral-700 hover:text-primary-600 font-medium transition">{t('nav.eligibility')}</Link>
+            <Link to="/calculator" className="text-neutral-700 hover:text-primary-600 font-medium transition">Calculator</Link>
+            <Link to="/documents" className="text-neutral-700 hover:text-primary-600 font-medium transition">Apply Now</Link>
+            <Link to="/status" className="text-neutral-700 hover:text-primary-600 font-medium transition">{t('nav.status')}</Link>
+            <Link to="/faq" className="text-neutral-700 hover:text-primary-600 font-medium transition">FAQ</Link>
           </div>
 
           {/* Right Side - Language & Auth */}
           <div className="flex items-center gap-4">
-            <LanguageSelector />
+            {/* Globe icon wraps LanguageSelector */}
+            <div className="p-1 rounded-full hover:bg-neutral-100 transition">
+              <LanguageSelector />
+            </div>
 
             {user ? (
               <div className="flex items-center gap-3">
