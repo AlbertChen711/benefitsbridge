@@ -16,6 +16,9 @@ export const ApplicationProvider = ({ children }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [savedAt, setSavedAt] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [submittedAt, setSubmittedAt] = useState(null);
+  const [applicationStatus, setApplicationStatus] = useState(null); // e.g., 'submitted', 'under_review', 'approved'
+  const [referenceNumber, setReferenceNumber] = useState(null);
 
   // Load saved data from localStorage on mount
   useEffect(() => {
@@ -26,6 +29,16 @@ export const ApplicationProvider = ({ children }) => {
       } catch (err) {
         console.error('Failed to load saved application data:', err);
       }
+    }
+    // load submission meta if present
+    const meta = localStorage.getItem('applicationMeta');
+    if (meta) {
+      try {
+        const m = JSON.parse(meta);
+        if (m.submittedAt) setSubmittedAt(new Date(m.submittedAt));
+        if (m.applicationStatus) setApplicationStatus(m.applicationStatus);
+        if (m.referenceNumber) setReferenceNumber(m.referenceNumber);
+      } catch (err) { console.error('Failed to load application meta', err); }
     }
   }, []);
 
@@ -69,10 +82,38 @@ export const ApplicationProvider = ({ children }) => {
       }
 
       setSavedAt(new Date());
+  // persist meta (keep existing)
+  const meta = JSON.parse(localStorage.getItem('applicationMeta') || '{}');
+  localStorage.setItem('applicationMeta', JSON.stringify(meta));
     } catch (err) {
       console.error('Failed to save application data:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const submitApplication = async () => {
+    try {
+      // mark as submitted locally and persist
+      const now = new Date();
+      setSubmittedAt(now);
+      setApplicationStatus('submitted');
+      const ref = `CB-${now.getFullYear()}-${Math.floor(Math.random()*9000000)+1000000}`;
+      setReferenceNumber(ref);
+      const meta = { submittedAt: now.toISOString(), applicationStatus: 'submitted', referenceNumber: ref };
+      localStorage.setItem('applicationMeta', JSON.stringify(meta));
+
+      // send to server if authenticated (best-effort)
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        await fetch('/api/application/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ applicationData, submittedAt: now.toISOString(), referenceNumber: ref }),
+        });
+      }
+    } catch (err) {
+      console.error('Failed to submit application', err);
     }
   };
 
@@ -140,6 +181,10 @@ export const ApplicationProvider = ({ children }) => {
     removeDocument,
     savedAt,
     isSaving,
+    submitApplication,
+    submittedAt,
+    applicationStatus,
+    referenceNumber,
   };
 
   return (

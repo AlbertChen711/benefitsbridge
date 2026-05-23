@@ -42,7 +42,7 @@ export default function AIAssistant() {
           ...prev,
           {
             role: 'assistant',
-            text: `Sorry, I had trouble understanding. Please call CalFresh at ${t('help.helplineNumber')}`,
+            text: 'For more well-trained answers, go to https://cdn.botpress.cloud/webchat/v3.6/shareable.html?configUrl=https://files.bpcontent.cloud/2026/05/23/19/20260523195624-JA1OVEIN.json',
           },
         ]);
       }
@@ -52,7 +52,7 @@ export default function AIAssistant() {
         ...prev,
         {
           role: 'assistant',
-          text: `There was an error. Please call CalFresh at ${t('help.helplineNumber')}`,
+          text: 'For more well-trained answers, go to https://cdn.botpress.cloud/webchat/v3.6/shareable.html?configUrl=https://files.bpcontent.cloud/2026/05/23/19/20260523195624-JA1OVEIN.json',
         },
       ]);
     } finally {

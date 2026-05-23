@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useApplication } from '../context/ApplicationContext';
 import ProgressBar from '../components/common/ProgressBar';
 
 export default function Documents() {
@@ -53,6 +54,8 @@ export default function Documents() {
   });
 
   const [openHowTo, setOpenHowTo] = React.useState({});
+
+  const { submittedAt, referenceNumber } = useApplication();
 
   React.useEffect(() => {
     try {
@@ -144,16 +147,27 @@ export default function Documents() {
             </div>
 
             <div className="flex flex-col items-end gap-2">
-              <button
-                disabled={!allReady}
-                className={`px-6 py-3 rounded-full text-white font-semibold transition
-                  ${allReady ? 'bg-success-600 hover:bg-success-700' : 'bg-neutral-300 cursor-not-allowed opacity-60'}`}
-                onClick={() => window.location.href = '/apply'}
-              >
-                I Have All My Documents — Start Application
-              </button>
+              {submittedAt ? (
+                <div className="text-right">
+                  <div className="text-sm text-neutral-600">Application submitted</div>
+                  <div className="font-mono font-semibold text-primary-600">{referenceNumber || '—'}</div>
+                  <div className="text-sm text-neutral-500">{new Date(submittedAt).toLocaleString()}</div>
+                  <a href="/status" className="mt-3 inline-block px-4 py-2 bg-primary-600 text-white rounded-full">View Application</a>
+                </div>
+              ) : (
+                <>
+                  <button
+                    disabled={!allReady}
+                    className={`px-6 py-3 rounded-full text-white font-semibold transition
+                      ${allReady ? 'bg-success-600 hover:bg-success-700' : 'bg-neutral-300 cursor-not-allowed opacity-60'}`}
+                    onClick={() => window.location.href = '/apply'}
+                  >
+                    I Have All My Documents — Start Application
+                  </button>
 
-              <a href="/apply" className="text-sm text-neutral-700 mt-1">Start Anyway</a>
+                  <a href="/apply" className="text-sm text-neutral-700 mt-1">Start Anyway</a>
+                </>
+              )}
             </div>
           </div>
         </div>

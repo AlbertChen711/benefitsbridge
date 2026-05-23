@@ -1,14 +1,27 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useApplication } from '../context/ApplicationContext';
 
 export default function Status() {
   const { t } = useLanguage();
+  const { referenceNumber, submittedAt, applicationStatus } = useApplication();
+  // Build timeline based on submission timestamp
+  const base = submittedAt ? new Date(submittedAt) : null;
+  const addDays = (d, days) => { const n = new Date(d); n.setDate(n.getDate() + days); return n; };
 
-  const stages = [
-    { id: 'submitted', label: t('status.submitted'), date: '01/15/2024', completed: true },
-    { id: 'review', label: t('status.underReview'), date: '01/20/2024', completed: false, current: true },
-    { id: 'interview', label: t('status.interview'), date: '02/10/2024', completed: false },
-    { id: 'pending', label: t('status.pending'), date: 'Est. 02/20/2024', completed: false },
+  const stages = base ? [
+    { id: 'submitted', label: t('status.submitted'), date: base.toLocaleDateString(), completed: true },
+    { id: 'review', label: t('status.underReview'), date: addDays(base, 5).toLocaleDateString(), completed: applicationStatus !== null && applicationStatus !== 'submitted', current: applicationStatus === 'submitted' },
+    { id: 'interview', label: t('status.interview'), date: addDays(base, 15).toLocaleDateString(), completed: false },
+    { id: 'pending', label: t('status.pending'), date: addDays(base, 25).toLocaleDateString(), completed: false },
+    { id: 'approved', label: t('status.approved'), date: '', completed: false },
+    { id: 'ebtMailed', label: t('status.ebtMailed'), date: '', completed: false },
+    { id: 'active', label: t('status.benefitsActive'), date: '', completed: false },
+  ] : [
+    { id: 'submitted', label: t('status.submitted'), date: '', completed: false },
+    { id: 'review', label: t('status.underReview'), date: '', completed: false },
+    { id: 'interview', label: t('status.interview'), date: '', completed: false },
+    { id: 'pending', label: t('status.pending'), date: '', completed: false },
     { id: 'approved', label: t('status.approved'), date: '', completed: false },
     { id: 'ebtMailed', label: t('status.ebtMailed'), date: '', completed: false },
     { id: 'active', label: t('status.benefitsActive'), date: '', completed: false },
@@ -19,7 +32,7 @@ export default function Status() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold mb-2">{t('status.title')}</h1>
         <p className="text-neutral-600 text-lg mb-8">
-          Reference: <span className="font-mono font-bold text-primary-600">CB-2024-1234567</span>
+          Reference: <span className="font-mono font-bold text-primary-600">{referenceNumber || '—'}</span>
         </p>
 
         {/* Timeline */}
@@ -71,17 +84,18 @@ export default function Status() {
         </div>
 
         {/* Current Status Info */}
-        <div className="bg-primary-50 border-2 border-primary-200 rounded-lg p-6 mb-8">
-          <h3 className="text-xl font-bold text-neutral-900 mb-2">
-            Your application is under review
-          </h3>
-          <p className="text-neutral-700 mb-4">
-            An eligibility worker is reviewing your documents. This usually takes 5-10 business days.
-          </p>
-          <p className="text-neutral-600 text-sm">
-            We'll contact you at (555) 000-0000 when we need more information.
-          </p>
-        </div>
+        {submittedAt ? (
+          <div className="bg-primary-50 border-2 border-primary-200 rounded-lg p-6 mb-8">
+            <h3 className="text-xl font-bold text-neutral-900 mb-2">Your application is under review</h3>
+            <p className="text-neutral-700 mb-4">An eligibility worker is reviewing your documents. This usually takes 5-10 business days.</p>
+            <p className="text-neutral-600 text-sm">We'll contact you at the phone or email you provided if we need more information.</p>
+          </div>
+        ) : (
+          <div className="bg-neutral-50 border-2 border-neutral-200 rounded-lg p-6 mb-8">
+            <h3 className="text-xl font-bold text-neutral-900 mb-2">No application submitted</h3>
+            <p className="text-neutral-700">You don't have an application on file. Start an application from the Documents or Apply page.</p>
+          </div>
+        )}
 
         {/* Deadline Warning */}
         <div className="bg-warning-50 border-2 border-warning-300 rounded-lg p-6 mb-8">

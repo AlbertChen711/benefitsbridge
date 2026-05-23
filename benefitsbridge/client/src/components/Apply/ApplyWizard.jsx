@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApplication } from '../../context/ApplicationContext';
 import ProgressBar from '../common/ProgressBar';
 import Tooltip from '../common/Tooltip';
@@ -15,6 +16,22 @@ const calcBenefit = (householdSize, income, expenses = 0) => {
   return benefit;
 };
 
+// SSN helpers: clean raw input to digits, and format for display with optional masking
+const cleanSSN = (value = '') => ('' + value).replace(/\D/g, '').slice(0,9);
+const formatSSNInput = (value = '', show = true) => {
+  const digits = cleanSSN(value);
+  if (!show && digits.length >= 4) {
+    // mask middle digits: XXX-XX-1234
+    const last4 = digits.slice(-4);
+    return `***-**-${last4}`;
+  }
+  const parts = [];
+  if (digits.length > 0) parts.push(digits.slice(0,3));
+  if (digits.length >= 4) parts.push(digits.slice(3,5));
+  if (digits.length >= 6) parts.push(digits.slice(5,9));
+  return parts.join('-');
+}
+
 function AddHouseholdMemberForm({ onAdd }) {
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
@@ -22,14 +39,21 @@ function AddHouseholdMemberForm({ onAdd }) {
   const [relationship, setRelationship] = React.useState('Other');
   const [applying, setApplying] = React.useState(true);
   const [hasIncome, setHasIncome] = React.useState(false);
+  const [ssn, setSsn] = React.useState('');
+  const [phone, setPhone] = React.useState('');
+  const [showSsn, setShowSsn] = React.useState(false);
+  const [localErrors, setLocalErrors] = React.useState({});
 
   const submit = () => {
     if (!firstName || !lastName || !dob) {
-      alert('Please check this — it looks like something might be missing');
+      // inline validation will surface on form
+      setLocalErrors({ addMember: 'First name, last name and date of birth are required.' });
       return;
     }
-    onAdd({ firstName, lastName, dob, relationship, applying, hasIncome });
+    onAdd({ firstName, lastName, dob, relationship, applying, hasIncome, ssn, phone });
     setFirstName(''); setLastName(''); setDob(''); setRelationship('Other'); setApplying(true); setHasIncome(false);
+    setSsn(''); setPhone('');
+    setLocalErrors({});
   };
 
   return (
@@ -39,6 +63,14 @@ function AddHouseholdMemberForm({ onAdd }) {
         <input value={lastName} onChange={(e)=>setLastName(e.target.value)} placeholder="Last name" className="px-2 py-2 border rounded" />
         <input type="date" value={dob} onChange={(e)=>setDob(e.target.value)} className="px-2 py-2 border rounded" />
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+        <div className="flex items-center gap-2">
+          <input value={formatSSNInput(ssn, showSsn)} onChange={(e)=>setSsn(cleanSSN(e.target.value))} placeholder="SSN (optional)" className="px-2 py-2 border rounded flex-1" />
+          <button type="button" onClick={()=>setShowSsn(s=>!s)} className="text-sm text-primary-600">{showSsn ? 'Hide' : 'Show'}</button>
+        </div>
+        <input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="Phone (optional)" className="px-2 py-2 border rounded" />
+      </div>
+  {localErrors.addMember && <div className="text-sm text-red-600 mt-2">{localErrors.addMember}</div>}
       <div className="flex items-center gap-2 mt-2">
         <select value={relationship} onChange={(e)=>setRelationship(e.target.value)} className="px-2 py-2 border rounded">
           <option>Spouse/Partner</option>
@@ -61,11 +93,15 @@ function IncomeSection({ member }) {
   const { updateApplicationData } = useApplication();
   const path = `income_${member.id}`;
 
+  const handleChange = (key, value) => {
+    updateApplicationData('incomeEmployment', { [path+key]: value });
+  };
+
   return (
     <div className="bg-white p-3 rounded border">
       <div className="font-medium">{member.firstName} {member.lastName}</div>
       <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2">
-        <select onChange={(e)=> updateApplicationData('incomeEmployment', { [path+'_status']: e.target.value })} className="px-2 py-2 border rounded">
+        <select onChange={(e)=> handleChange('_status', e.target.value)} className="px-2 py-2 border rounded">
           <option>Employed full-time</option>
           <option>Employed part-time</option>
           <option>Self-employed</option>
@@ -74,8 +110,29 @@ function IncomeSection({ member }) {
           <option>Retired</option>
           <option>Disabled</option>
         </select>
-        <input type="text" placeholder="Employer name" onChange={(e)=> updateApplicationData('incomeEmployment', { [path+'_employer']: e.target.value })} className="px-2 py-2 border rounded" />
-        <input type="number" placeholder="Monthly gross income" onChange={(e)=> updateApplicationData('incomeEmployment', { [path+'_amount']: Number(e.target.value) })} className="px-2 py-2 border rounded" />
+        <input type="text" placeholder="Employer name" onChange={(e)=> handleChange('_employer', e.target.value)} className="px-2 py-2 border rounded" />
+        <input type="number" placeholder="Monthly gross income" onChange={(e)=> handleChange('_amount', Number(e.target.value))} className="px-2 py-2 border rounded" />
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+        <select onChange={(e)=> handleChange('_frequency', e.target.value)} className="px-2 py-2 border rounded">
+          <option value="monthly">Monthly</option>
+          <option value="biweekly">Biweekly</option>
+          <option value="weekly">Weekly</option>
+        </select>
+
+        <div className="col-span-2">
+          <p className="text-sm font-medium">Other income sources (check those that apply and enter amount)</p>
+          <div className="flex flex-wrap gap-3 mt-2">
+            {['Child support received','Social Security / SSI','Unemployment benefits','Disability payments','Pension or retirement','Rental income','Other'].map(src => (
+              <label key={src} className="flex items-center gap-2">
+                <input type="checkbox" onChange={(e)=> handleChange('_other_'+src.replace(/\s+/g,'_'), e.target.checked)} />
+                <span className="text-sm">{src}</span>
+                <input type="number" placeholder="$" onChange={(e)=> handleChange('_otheramt_'+src.replace(/\s+/g,'_'), Number(e.target.value))} className="ml-2 px-2 py-1 border rounded w-24" />
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -107,8 +164,11 @@ function StepWrapper({ children, title, subtitle, step, total, onBack }) {
 }
 
 export default function ApplyWizard() {
-  const { applicationData, updateApplicationData, saveApplicationData, currentStep, setCurrentStep, savedAt, isSaving, addHouseholdMember, removeHouseholdMember, addDocument } = useApplication();
+  const { applicationData, updateApplicationData, saveApplicationData, currentStep, setCurrentStep, savedAt, isSaving, addHouseholdMember, removeHouseholdMember, addDocument, submitApplication } = useApplication();
   const total = 7;
+  const navigate = useNavigate();
+
+  const [errors, setErrors] = React.useState({});
 
   const [localStep, setLocalStep] = React.useState(currentStep || 0);
 
@@ -116,6 +176,8 @@ export default function ApplyWizard() {
 
   const next = () => setLocalStep(s => Math.min(total - 1, s + 1));
   const back = () => setLocalStep(s => Math.max(0, s - 1));
+
+  // (formatSSNInput and cleanSSN defined above)
 
   return (
     <div className="space-y-6">
@@ -166,18 +228,67 @@ export default function ApplyWizard() {
               <div className="flex-1">
                 <label className="block text-sm font-medium text-neutral-800">Social Security Number</label>
                 <div className="mt-1">
-                  <input
-                    placeholder="XXX-XX-1234"
-                    value={applicationData.personalInfo.ssn || ''}
-                    onChange={(e) => updateApplicationData('personalInfo', { ssn: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      placeholder="XXX-XX-1234"
+                      value={applicationData.personalInfo.ssn ? formatSSNInput(applicationData.personalInfo.ssn, false) : ''}
+                      onChange={(e) => updateApplicationData('personalInfo', { ssn: cleanSSN(e.target.value) })}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                    <Tooltip text="We will mask most digits for privacy. We only use SSN to verify identity when needed." />
+                  </div>
                 </div>
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-800">Phone number</label>
+                <input
+                  placeholder="(555) 555-5555"
+                  value={applicationData.personalInfo.phone || ''}
+                  onChange={(e) => updateApplicationData('personalInfo', { phone: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md mt-1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-800">Email (optional)</label>
+                <input
+                  placeholder="maria@example.com"
+                  value={applicationData.personalInfo.email || ''}
+                  onChange={(e) => updateApplicationData('personalInfo', { email: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-800">Preferred language</label>
+              <select value={applicationData.personalInfo.language || 'en'} onChange={(e) => updateApplicationData('personalInfo', { language: e.target.value })} className="mt-1 w-48 px-3 py-2 border rounded-md">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="zh">Mandarin</option>
+                <option value="vi">Vietnamese</option>
+              </select>
+            </div>
+
             <div className="flex gap-4">
-              <button type="button" onClick={next} className="ml-auto px-5 py-3 bg-success-600 text-white rounded-full">Next</button>
+              <button type="button" onClick={() => { saveApplicationData(); setErrors(prev=>({...prev, personal: 'Saved'})); setTimeout(()=> setErrors(prev => ({...prev, personal: null})), 1500); }} className="px-4 py-2 bg-neutral-200 rounded-full">Save</button>
+              <div className="ml-auto">
+                {errors.personal && <div className="text-sm text-green-600 mr-4 inline">{errors.personal}</div>}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const p = applicationData.personalInfo || {};
+                    if (!p.firstName || !p.lastName || !p.dob) {
+                      setErrors(prev=>({...prev, personal: 'First name, last name and DOB are required.'}));
+                      return;
+                    }
+                    next();
+                  }}
+                  className="px-5 py-3 bg-success-600 text-white rounded-full"
+                >Next</button>
+              </div>
             </div>
           </form>
         </StepWrapper>
@@ -194,7 +305,23 @@ export default function ApplyWizard() {
               className="w-full px-3 py-2 border rounded-md"
             />
 
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-800">Apt / Unit (optional)</label>
+                <input value={applicationData.addressHousing.unit || ''} onChange={(e)=> updateApplicationData('addressHousing', { unit: e.target.value })} placeholder="Apt 5B" className="w-full px-3 py-2 border rounded-md" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-800">County</label>
+                <select value={applicationData.addressHousing.county || ''} onChange={(e)=> updateApplicationData('addressHousing', { county: e.target.value })} className="w-full px-3 py-2 border rounded-md">
+                  <option value="">Select county</option>
+                  {['Alameda','Alpine','Amador','Butte','Calaveras','Colusa','Contra Costa','Del Norte','El Dorado','Fresno','Glenn','Humboldt','Imperial','Inyo','Kern','Kings','Lake','Lassen','Los Angeles','Madera','Marin','Mariposa','Mendocino','Merced','Modoc','Mono','Monterey','Napa','Nevada','Orange','Placer','Plumas','Riverside','Sacramento','San Benito','San Bernardino','San Diego','San Francisco','San Joaquin','San Luis Obispo','San Mateo','Santa Barbara','Santa Clara','Santa Cruz','Shasta','Sierra','Siskiyou','Solano','Sonoma','Stanislaus','Sutter','Tehama','Trinity','Tulare','Tuolumne','Ventura','Yolo','Yuba'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-neutral-800">City</label>
                 <input
@@ -215,9 +342,43 @@ export default function ApplyWizard() {
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <button onClick={back} className="px-5 py-3 bg-neutral-200 rounded-full">Back</button>
-              <button onClick={next} className="ml-auto px-5 py-3 bg-success-600 text-white rounded-full">Next</button>
+            <div>
+              <label className="block text-sm font-medium text-neutral-800">How long have you lived at this address?</label>
+              <select value={applicationData.addressHousing.timeAtAddress || ''} onChange={(e)=> updateApplicationData('addressHousing', { timeAtAddress: e.target.value })} className="w-64 px-3 py-2 border rounded-md mt-1">
+                <option value="">Select</option>
+                <option>Less than 1 month</option>
+                <option>1-6 months</option>
+                <option>6-12 months</option>
+                <option>1-2 years</option>
+                <option>More than 2 years</option>
+              </select>
+
+              <div className="mt-4">
+                <p className="block text-sm font-medium text-neutral-800">Housing situation</p>
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {[
+                    {key:'rent', label:'🏠 I rent my home'},
+                    {key:'own', label:'🏡 I own my home'},
+                    {key:'stay', label:'🛋 I stay with family or friends'},
+                    {key:'temporary', label:'🏨 I am in temporary housing'},
+                    {key:'complicated', label:'❓ My situation is complicated'},
+                  ].map(h => (
+                    <label key={h.key} className={`px-3 py-2 rounded-full border ${applicationData.addressHousing.housingSituation === h.key ? 'bg-primary-100 border-primary-300' : 'bg-white'}`}>
+                      <input type="radio" name="housing" className="hidden" checked={applicationData.addressHousing.housingSituation === h.key} onChange={() => updateApplicationData('addressHousing', { housingSituation: h.key })} />
+                      <span className="text-sm">{h.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-6">
+                <button onClick={back} className="px-5 py-3 bg-neutral-200 rounded-full">Back</button>
+                <button onClick={() => {
+                  const a = applicationData.addressHousing || {};
+                  if (!a.street || !a.city || !a.county || !a.zip) { alert('Please check this — it looks like something might be missing'); return; }
+                  next();
+                }} className="ml-auto px-5 py-3 bg-success-600 text-white rounded-full">Next</button>
+              </div>
             </div>
           </div>
         </StepWrapper>
@@ -369,7 +530,7 @@ export default function ApplyWizard() {
 
             <div className="flex gap-4 mt-4">
               <button onClick={back} className="px-5 py-3 bg-neutral-200 rounded-full">Back</button>
-              <button onClick={() => { saveApplicationData(); window.location.href = '/confirmation'; }} className="ml-auto px-5 py-3 bg-success-600 text-white rounded-full">Submit My Application</button>
+              <button onClick={async () => { await submitApplication(); navigate('/confirmation'); }} className="ml-auto px-5 py-3 bg-success-600 text-white rounded-full">Submit My Application</button>
             </div>
           </div>
         </StepWrapper>

@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useApplication } from '../context/ApplicationContext';
 
 export default function Confirmation() {
   const { t } = useLanguage();
+  const { referenceNumber, submittedAt } = useApplication();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-success-50 to-white py-16 px-4">
@@ -16,14 +18,14 @@ export default function Confirmation() {
             {t('confirmation.congratulations')}!
           </h1>
           <p className="text-2xl text-success-600 font-semibold mb-8">
-            Your application has been submitted
+            {submittedAt ? `Submitted ${new Date(submittedAt).toLocaleString()}` : 'Your application has been submitted'}
           </p>
         </div>
 
         <div className="bg-white border-2 border-success-200 rounded-lg p-8 mb-10">
           <p className="text-neutral-600 text-lg mb-3">Your reference number:</p>
           <p className="text-4xl font-bold text-primary-600 font-mono mb-6">
-            CB-2024-1234567
+            {referenceNumber || '—'}
           </p>
           <p className="text-neutral-600 text-sm">
             Save this number to track your application status
