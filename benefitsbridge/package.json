@@ -1,0 +1,21 @@
+{
+  "name": "benefitsbridge",
+  "version": "1.0.0",
+  "description": "Smart, human-centered platform helping low-income Californians apply for CalFresh benefits",
+  "private": true,
+  "author": "BenefitsBridge Team",
+  "license": "MIT",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "start": "npm run start --workspace=client & npm run start --workspace=server",
+    "dev": "concurrently \"npm run dev --workspace=client\" \"npm run dev --workspace=server\"",
+    "build": "npm run build --workspace=client && npm run build --workspace=server",
+    "test": "npm run test --workspace=client && npm run test --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
